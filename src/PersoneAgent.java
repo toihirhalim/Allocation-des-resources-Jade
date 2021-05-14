@@ -1,28 +1,45 @@
-import jade.core.Agent;
-
 import java.io.IOException;
 import java.util.Random;
 
 import jade.core.AID;
-import jade.core.behaviours.*;
-import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
+import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.CyclicBehaviour;
+import jade.core.behaviours.TickerBehaviour;
+import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
+import jade.lang.acl.UnreadableException;
 
 public class PersoneAgent extends Agent {
 
 	private boolean status;
 	private AID[] restaurants;
+	private AID[] people;
 	private long time;
 	private int indexRandomRestaurant;
+	Random rand = new Random();
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
-		Random rand = new Random();
 		time = rand.nextInt(30000) + 10000;
+		
+		DFAgentDescription dfd = new DFAgentDescription();
+		dfd.setName(getAID());
+		ServiceDescription sd = new ServiceDescription();
+		sd.setType("people");
+		sd.setName("people");
+		dfd.addServices(sd);
+		try {
+			DFService.register(this, dfd);
+		}
+		catch (FIPAException fe) {
+			fe.printStackTrace();
+		}
 		
 		addBehaviour(new TickerBehaviour(this, time) {
 			protected void onTick() {
@@ -35,13 +52,14 @@ public class PersoneAgent extends Agent {
 				
 				try {
 					DFAgentDescription[] result = DFService.search(myAgent, template); 
-					System.out.println("Persone : "+getAID().getLocalName()+" found the following restaurant :");
+					System.out.print("Persone : "+getAID().getLocalName()+" found the following restaurant : [ ");
 
 					restaurants = new AID[result.length];
 					for (int i = 0; i < result.length; ++i) {
 						restaurants[i] = result[i].getName();
-						System.out.println("\t" + restaurants[i].getLocalName());
+						System.out.print(restaurants[i].getLocalName() + ", ");
 					}
+					System.out.println(" ]");
 				}
 				catch (FIPAException fe) {
 					fe.printStackTrace();
@@ -51,12 +69,18 @@ public class PersoneAgent extends Agent {
 
 			}
 		} );
+
 	}
 
 	protected void takeDown() {
+		try {
+			DFService.deregister(this);
+		}
+		catch (FIPAException fe) {
+			fe.printStackTrace();
+		}
 		System.out.println("Persone : "+getAID().getLocalName()+" terminating.\n");
 	}
-
 
 	private class CallForReservation extends Behaviour {
 
@@ -69,7 +93,6 @@ public class PersoneAgent extends Agent {
 			case 0:
 
 				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
-				Random rand = new Random(); 
 				indexRandomRestaurant = rand.nextInt(restaurants.length);
 				System.out.println("Personne : " + getAID().getLocalName() + " chose the restaurant : " + restaurants[indexRandomRestaurant].getLocalName());
 				cfp.addReceiver(restaurants[indexRandomRestaurant]);
@@ -77,7 +100,6 @@ public class PersoneAgent extends Agent {
 				try {
 					cfp.setContentObject(new Message("reserver-restaurant","1"));
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -103,6 +125,29 @@ public class PersoneAgent extends Agent {
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to reserve from "+reply.getSender().getLocalName());
+						
+						DFAgentDescription template = new DFAgentDescription();
+						ServiceDescription sd = new ServiceDescription();
+						sd.setType("people");
+						template.addServices(sd);
+						
+						try {
+							DFAgentDescription[] result = DFService.search(myAgent, template); 
+							System.out.print("Persone : "+getAID().getLocalName()+" demande au agents : [ ");
+
+							people = new AID[result.length - 1];
+							int index = 0;
+							for (int i = 0; i < result.length; ++i) {
+								if(!result[i].getName().equals(getAID()) && rand.nextInt(2) == 1) {
+									people[index]= result[i].getName();
+									System.out.print(people[index++].getLocalName() + ", ");
+								}
+							}
+							System.out.println(" ] ce qu il font");
+						}
+						catch (FIPAException fe) {
+							fe.printStackTrace();
+						}
 					}
 					step = 2;
 
@@ -173,5 +218,5 @@ public class PersoneAgent extends Agent {
 			return (step == 2 );
 		}
 	}
-
+	
 }

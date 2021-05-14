@@ -51,7 +51,6 @@ public class RestaurantAgent extends Agent {
 		}
 	}
 
-
 	protected void takeDown() {
 
 		try {
@@ -63,7 +62,6 @@ public class RestaurantAgent extends Agent {
 		
 		System.out.println("Restaurant : "+getAID().getLocalName()+" termining");
 	}
-	
 	
 	private class ReciveCallService extends CyclicBehaviour {
 		
