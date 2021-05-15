@@ -11,8 +11,8 @@ public class Hello {
 		// TODO Auto-generated method stub
 		
 		int peopleCount = 10;
-		String [] people = {"Halim", "Fati", "Siham", "Yasser", "Amina", "Omar"};
-		String [][] restaurants = {{"Caniada", "2"}, {"Acordeon", "4"}, {"Epsilon", "1"}};
+		String [] people = {"Halim", "Fati", "Siham", "Yasser", "Amina", "Omar", "Rachida", "Ali"};
+		String [][] restaurants = {{"Caniada", "2"}, {"Acordeon", "1"}, {"Epsilon", "1"}};
 
 		try {
 			ProfileImpl p = new ProfileImpl();

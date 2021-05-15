@@ -43,7 +43,7 @@ public class PersoneAgent extends Agent {
 		
 		addBehaviour(new TickerBehaviour(this, time) {
 			protected void onTick() {
-				System.out.println("\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
+				System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
 
 				DFAgentDescription template = new DFAgentDescription();
 				ServiceDescription sd = new ServiceDescription();
@@ -70,6 +70,7 @@ public class PersoneAgent extends Agent {
 			}
 		} );
 
+		addBehaviour(new RecieveMessageFromPeople());
 	}
 
 	protected void takeDown() {
@@ -117,7 +118,7 @@ public class PersoneAgent extends Agent {
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						System.out.println("Persone : "+getAID().getLocalName()+" successfully reserved a place from "+reply.getSender().getLocalName());
 						
-						addBehaviour(new WakerBehaviour(myAgent, time/2) {
+						addBehaviour(new WakerBehaviour(myAgent, 2 * time/3) {
 							protected void handleElapsedTimeout() {
 								addBehaviour(new LeaveRestaurant());
 							}
@@ -144,6 +145,7 @@ public class PersoneAgent extends Agent {
 								}
 							}
 							System.out.println(" ] ce qu il font");
+							addBehaviour(new SendMessageToPeople());
 						}
 						catch (FIPAException fe) {
 							fe.printStackTrace();
@@ -219,4 +221,94 @@ public class PersoneAgent extends Agent {
 		}
 	}
 	
+	private class SendMessageToPeople extends Behaviour {
+
+		private MessageTemplate mt;
+		private int step = 0;
+		private int messagesRecieved = 0;
+
+		public void action() {
+			
+			switch (step) {
+			case 0:
+				ACLMessage cfp = new ACLMessage(ACLMessage.CFP);
+				for(int i = 0; i < people.length; i++) {
+					cfp.addReceiver(people[i]);
+				}
+				
+				try {
+					cfp.setContentObject(new Message("demande-inforation","1"));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				cfp.setReplyWith("cfp"+System.currentTimeMillis());
+				myAgent.send(cfp);
+
+				mt = MessageTemplate.MatchInReplyTo(cfp.getReplyWith());
+				step = 1;
+
+				break;
+			case 1:
+				ACLMessage reply = myAgent.receive(mt);
+				if (reply != null) {
+					if (reply.getPerformative() == ACLMessage.INFORM) {
+						try {
+							Message messageContent = (Message) reply.getContentObject();
+							if(messageContent.getType().equals("reponse-information")) {
+								System.out.println("Persone : "+getAID().getLocalName()+" recieved reply from "+reply.getSender().getLocalName() + " message : '" + messageContent.getContent()+ "'");
+								messagesRecieved++;
+							}
+						} catch (UnreadableException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				else {
+					block();
+				}
+
+				break;
+			}        
+		}
+
+		public boolean done() {
+			return (messagesRecieved == people.length );
+		}
+	}
+	
+	private class RecieveMessageFromPeople extends CyclicBehaviour {
+		
+		public void action() {
+			
+			MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.CFP);
+			ACLMessage msg = myAgent.receive(mt);
+			
+			if (msg != null) {
+				try {
+					Message messageContent = (Message) msg.getContentObject();
+					
+					if(messageContent.getType().equals("demande-inforation")) {
+						ACLMessage reply = msg.createReply();
+						
+						System.out.println("Persone : " + myAgent.getLocalName() + " recieved a message from : " + msg.getSender().getLocalName());
+						
+						reply.setPerformative(ACLMessage.INFORM);
+						reply.setContentObject(new Message("reponse-information", "I am doing something"));
+						
+						myAgent.send(reply);
+					}
+				} catch (UnreadableException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			else {
+				block();
+			}
+		}
+	} 
+
 }
