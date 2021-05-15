@@ -22,11 +22,13 @@ public class PersoneAgent extends Agent {
 	private AID[] people;
 	private long time;
 	private int indexRandomRestaurant;
-	Random rand = new Random();
+	private Random rand = new Random();
+	private int state;
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
 		time = rand.nextInt(30000) + 10000;
+		state = 0;
 		
 		DFAgentDescription dfd = new DFAgentDescription();
 		dfd.setName(getAID());
@@ -43,6 +45,7 @@ public class PersoneAgent extends Agent {
 		
 		addBehaviour(new TickerBehaviour(this, time) {
 			protected void onTick() {
+				state = 1;
 				System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
 
 				DFAgentDescription template = new DFAgentDescription();
@@ -82,7 +85,7 @@ public class PersoneAgent extends Agent {
 		}
 		System.out.println("Persone : "+getAID().getLocalName()+" terminating.\n");
 	}
-
+	
 	private class CallForReservation extends Behaviour {
 
 		private MessageTemplate mt;
@@ -109,6 +112,7 @@ public class PersoneAgent extends Agent {
 
 				mt = MessageTemplate.MatchInReplyTo(cfp.getReplyWith());
 				step = 1;
+				state = 2;
 
 				break;
 			case 1:
@@ -117,7 +121,7 @@ public class PersoneAgent extends Agent {
 				if (reply != null) {
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						System.out.println("Persone : "+getAID().getLocalName()+" successfully reserved a place from "+reply.getSender().getLocalName());
-						
+						state = 3;
 						addBehaviour(new WakerBehaviour(myAgent, 2 * time/3) {
 							protected void handleElapsedTimeout() {
 								addBehaviour(new LeaveRestaurant());
@@ -126,7 +130,7 @@ public class PersoneAgent extends Agent {
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to reserve from "+reply.getSender().getLocalName());
-						
+						state = 4;
 						DFAgentDescription template = new DFAgentDescription();
 						ServiceDescription sd = new ServiceDescription();
 						sd.setType("people");
@@ -200,8 +204,9 @@ public class PersoneAgent extends Agent {
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
 					if (reply.getPerformative() == ACLMessage.INFORM) {
+						state = 5;
 						System.out.println("Persone : "+getAID().getLocalName()+" finished all tasks "+reply.getSender().getLocalName());
-						myAgent.doDelete();
+						//myAgent.doDelete();
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to leave from "+reply.getSender().getLocalName());
@@ -296,7 +301,7 @@ public class PersoneAgent extends Agent {
 						System.out.println("Persone : " + myAgent.getLocalName() + " recieved a message from : " + msg.getSender().getLocalName());
 						
 						reply.setPerformative(ACLMessage.INFORM);
-						reply.setContentObject(new Message("reponse-information", "I am doing something"));
+						reply.setContentObject(new Message("reponse-information", getStateAgent()));
 						
 						myAgent.send(reply);
 					}
@@ -311,4 +316,29 @@ public class PersoneAgent extends Agent {
 		}
 	} 
 
+	private String getStateAgent() {
+		String str = "I'am doing nothing";
+		switch(state) {
+		case 0: 
+			str = "I'm waiting to make a reservation";
+			break;
+		case 1: 
+			str = "I'm triyng to make a reservation";
+			break;
+		case 2: 
+			str = "I'm calling the restaurant " + restaurants[indexRandomRestaurant].getLocalName() + " and waiting for response";
+			break;
+		case 3:
+			str = "I reserved a place in restaurant " + restaurants[indexRandomRestaurant].getLocalName() ;
+			break;
+		case 4:
+			str = "I failed to reseve retaurant " + restaurants[indexRandomRestaurant].getLocalName() + " now I'm tring to see what other people are doing";
+			break;
+		case 5:
+			str = "I freed my place at the restaurant " + restaurants[indexRandomRestaurant].getLocalName();
+			break;
+		}
+		
+		return str;
+	}
 }

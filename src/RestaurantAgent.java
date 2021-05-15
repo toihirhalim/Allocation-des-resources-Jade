@@ -83,7 +83,7 @@ public class RestaurantAgent extends Agent {
 						if (requestPlaces <= availablePlaces) {
 							availablePlaces-=requestPlaces;
 							reply.setPerformative(ACLMessage.INFORM);
-							System.out.println("Restaurant : "+msg.getSender().getLocalName()+" reserved "+requestPlaces+" places in "+myAgent.getLocalName() + " (" + capacity +" places availables)");
+							System.out.println("Restaurant : "+msg.getSender().getLocalName()+" reserved "+requestPlaces+" places in "+myAgent.getLocalName() + " (" + availablePlaces +" places restant)");
 							if(availablePlaces==0) {
 								System.out.println("Restaurant : "+myAgent.getLocalName()+" is fully occupied.");
 								//myAgent.doDelete();
