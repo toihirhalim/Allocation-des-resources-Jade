@@ -24,6 +24,7 @@ public class PersoneAgent extends Agent {
 	private int indexRandomRestaurant;
 	private Random rand = new Random();
 	private int state;
+	private int nombreAppel = 0;
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
@@ -83,7 +84,9 @@ public class PersoneAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-		System.out.println("Persone : "+getAID().getLocalName()+" terminating.\n");
+		System.out.println("Persone : "+getAID().getLocalName()+" terminating with "+ nombreAppel +" Call(s) .\n");
+		
+		
 	}
 	
 	private class CallForReservation extends Behaviour {
@@ -109,6 +112,7 @@ public class PersoneAgent extends Agent {
 				
 				cfp.setReplyWith("cfp"+System.currentTimeMillis());
 				myAgent.send(cfp);
+				nombreAppel++;
 
 				mt = MessageTemplate.MatchInReplyTo(cfp.getReplyWith());
 				step = 1;
@@ -122,11 +126,12 @@ public class PersoneAgent extends Agent {
 					if (reply.getPerformative() == ACLMessage.INFORM) {
 						System.out.println("Persone : "+getAID().getLocalName()+" successfully reserved a place from "+reply.getSender().getLocalName());
 						state = 3;
-						addBehaviour(new WakerBehaviour(myAgent, 2 * time/3) {
+						/*addBehaviour(new WakerBehaviour(myAgent, 2 * time/3) {
 							protected void handleElapsedTimeout() {
 								addBehaviour(new LeaveRestaurant());
 							}
-						});
+						});*/
+						myAgent.doDelete();
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to reserve from "+reply.getSender().getLocalName());

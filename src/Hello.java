@@ -12,11 +12,12 @@ public class Hello {
 		
 		int peopleCount = 10;
 		String [] people = {"Halim", "Fati", "Siham", "Yasser", "Amina", "Omar", "Rachida", "Ali"};
-		String [][] restaurants = {{"Caniada", "2"}, {"Acordeon", "1"}, {"Epsilon", "1"}};
-
+		String [][] restaurants = {{"Caniada", "3"}, {"Acordeon", "2"}, {"Epsilon", "4"}};
+		int CounterOccupation = 0;
 		try {
 			ProfileImpl p = new ProfileImpl();
 		    p.setParameter(Profile.MAIN_HOST, "localhost");
+		    p.setParameter(Profile.LOCAL_PORT, "12344");
 		    p.setParameter(Profile.GUI, "true");
 	
 		    ContainerController cc = Runtime.instance().createMainContainer(p);
