@@ -6,7 +6,6 @@ import jade.core.Agent;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.TickerBehaviour;
-import jade.core.behaviours.WakerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
@@ -28,7 +27,7 @@ public class PersoneAgent extends Agent {
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
-		time = rand.nextInt(30000) + 10000;
+		time = rand.nextInt(15000) + 5000;
 		state = 0;
 		
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -76,7 +75,7 @@ public class PersoneAgent extends Agent {
 
 		addBehaviour(new RecieveMessageFromPeople());
 	}
-
+	
 	protected void takeDown() {
 		try {
 			DFService.deregister(this);
