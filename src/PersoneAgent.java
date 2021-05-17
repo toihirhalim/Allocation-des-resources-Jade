@@ -24,6 +24,7 @@ public class PersoneAgent extends Agent {
 	private Random rand = new Random();
 	private int state;
 	private int nombreAppel = 0;
+	private boolean reservedRestaurant = false;
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
@@ -45,30 +46,32 @@ public class PersoneAgent extends Agent {
 		
 		addBehaviour(new TickerBehaviour(this, time) {
 			protected void onTick() {
-				state = 1;
-				System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
-
-				DFAgentDescription template = new DFAgentDescription();
-				ServiceDescription sd = new ServiceDescription();
-				sd.setType("reservation-restaurant");
-				template.addServices(sd);
-				
-				try {
-					DFAgentDescription[] result = DFService.search(myAgent, template); 
-					System.out.print("Persone : "+getAID().getLocalName()+" found the following restaurant : [ ");
-
-					restaurants = new AID[result.length];
-					for (int i = 0; i < result.length; ++i) {
-						restaurants[i] = result[i].getName();
-						System.out.print(restaurants[i].getLocalName() + ", ");
+				if(!reservedRestaurant) {
+					state = 1;
+					System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
+	
+					DFAgentDescription template = new DFAgentDescription();
+					ServiceDescription sd = new ServiceDescription();
+					sd.setType("reservation-restaurant");
+					template.addServices(sd);
+					
+					try {
+						DFAgentDescription[] result = DFService.search(myAgent, template); 
+						System.out.print("Persone : "+getAID().getLocalName()+" found the following restaurant : [ ");
+	
+						restaurants = new AID[result.length];
+						for (int i = 0; i < result.length; ++i) {
+							restaurants[i] = result[i].getName();
+							System.out.print(restaurants[i].getLocalName() + ", ");
+						}
+						System.out.println(" ]");
 					}
-					System.out.println(" ]");
+					catch (FIPAException fe) {
+						fe.printStackTrace();
+					}
+				
+					myAgent.addBehaviour(new CallForReservation());
 				}
-				catch (FIPAException fe) {
-					fe.printStackTrace();
-				}
-			
-				myAgent.addBehaviour(new CallForReservation());
 
 			}
 		} );
@@ -123,14 +126,16 @@ public class PersoneAgent extends Agent {
 				ACLMessage reply = myAgent.receive(mt);
 				if (reply != null) {
 					if (reply.getPerformative() == ACLMessage.INFORM) {
-						System.out.println("Persone : "+getAID().getLocalName()+" successfully reserved a place from "+reply.getSender().getLocalName());
+						System.out.println("Persone : "+getAID().getLocalName()+" successfully reserved a place from "+reply.getSender().getLocalName() +" with "+ nombreAppel +" Call(s)");
 						state = 3;
 						/*addBehaviour(new WakerBehaviour(myAgent, 2 * time/3) {
 							protected void handleElapsedTimeout() {
 								addBehaviour(new LeaveRestaurant());
 							}
 						});*/
-						myAgent.doDelete();
+						reservedRestaurant = true;
+						Hello.addSummary(getAID().getLocalName(), reply.getSender().getLocalName(), nombreAppel);
+						//myAgent.doDelete();
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to reserve from "+reply.getSender().getLocalName());
