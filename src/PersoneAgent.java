@@ -16,7 +16,6 @@ import jade.lang.acl.UnreadableException;
 
 public class PersoneAgent extends Agent {
 
-	private boolean status;
 	private AID[] restaurants;
 	private AID[] people;
 	private long time;
@@ -24,11 +23,11 @@ public class PersoneAgent extends Agent {
 	private Random rand = new Random();
 	private int state;
 	private int nombreAppel = 0;
-	private boolean reservedRestaurant = false;
+	private TickerBehaviour tickerBhaviour;
 
 	protected void setup() {
 		System.out.println("Persone : "+getAID().getLocalName()+" is ready.");
-		time = rand.nextInt(15000) + 5000;
+		time = rand.nextInt(10000) + 3000;
 		state = 0;
 		
 		DFAgentDescription dfd = new DFAgentDescription();
@@ -43,39 +42,38 @@ public class PersoneAgent extends Agent {
 		catch (FIPAException fe) {
 			fe.printStackTrace();
 		}
-		
-		addBehaviour(new TickerBehaviour(this, time) {
+		tickerBhaviour = new TickerBehaviour(this, time) {
 			protected void onTick() {
-				if(!reservedRestaurant) {
-					state = 1;
-					System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
-	
-					DFAgentDescription template = new DFAgentDescription();
-					ServiceDescription sd = new ServiceDescription();
-					sd.setType("reservation-restaurant");
-					template.addServices(sd);
-					
-					try {
-						DFAgentDescription[] result = DFService.search(myAgent, template); 
-						System.out.print("Persone : "+getAID().getLocalName()+" found the following restaurant : [ ");
-	
-						restaurants = new AID[result.length];
-						for (int i = 0; i < result.length; ++i) {
-							restaurants[i] = result[i].getName();
-							System.out.print(restaurants[i].getLocalName() + ", ");
-						}
-						System.out.println(" ]");
-					}
-					catch (FIPAException fe) {
-						fe.printStackTrace();
-					}
+				state = 1;
+				System.out.println("\n\nPersone : "+getAID().getLocalName()+" Trying to reserve a place.");
+
+				DFAgentDescription template = new DFAgentDescription();
+				ServiceDescription sd = new ServiceDescription();
+				sd.setType("reservation-restaurant");
+				template.addServices(sd);
 				
-					myAgent.addBehaviour(new CallForReservation());
+				try {
+					DFAgentDescription[] result = DFService.search(myAgent, template); 
+					System.out.print("Persone : "+getAID().getLocalName()+" found the following restaurant : [ ");
+
+					restaurants = new AID[result.length];
+					for (int i = 0; i < result.length; ++i) {
+						restaurants[i] = result[i].getName();
+						System.out.print(restaurants[i].getLocalName() + ", ");
+					}
+					System.out.println(" ]");
 				}
+				catch (FIPAException fe) {
+					fe.printStackTrace();
+				}
+			
+				myAgent.addBehaviour(new CallForReservation());
 
 			}
-		} );
-
+		};
+		
+		addBehaviour(tickerBhaviour);
+		
 		addBehaviour(new RecieveMessageFromPeople());
 	}
 	
@@ -133,9 +131,10 @@ public class PersoneAgent extends Agent {
 								addBehaviour(new LeaveRestaurant());
 							}
 						});*/
-						reservedRestaurant = true;
+						removeBehaviour(tickerBhaviour);
 						Hello.addSummary(getAID().getLocalName(), reply.getSender().getLocalName(), nombreAppel);
 						//myAgent.doDelete();
+						
 					}
 					else {
 						System.out.println("Persone : "+getAID().getLocalName()+" failed to reserve from "+reply.getSender().getLocalName());

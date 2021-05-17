@@ -10,7 +10,7 @@ import jade.wrapper.StaleProxyException;
 
 public class Hello {
 	static String [] people = {"Halim", "Fati", "Siham", "Yasser", "Amina", "Omar", "Rachida", "Ali"};
-	static String [][] restaurants = {{"Caniada", "3"}, {"Acordeon", "2"}, {"Epsilon", "4"}};
+	static String [][] restaurants = {{"Caniada", "1"}, {"Acordeon", "2"}, {"Epsilon", "5"}, {"Galaxy", "7"}};
 	static List<int[]> summary = new ArrayList();
 	
 	public static void main(String[] args) {
@@ -71,6 +71,7 @@ public class Hello {
 		return  -1;
 	}
 	static void printSummary() {
+		int sumCalls = 0;
 		System.out.println("\n\t\t\tSummary");
 		line();
 		System.out.println("| Personne\t| Restaurant\t| Nombre d appels |");
@@ -82,8 +83,9 @@ public class Hello {
 				System.out.println("| " + people[arr[0]] + "\t| " + restaurants[arr[1]][0] + "\t| " + arr[2] + "\t\t  |");
 			}
 			line();
+			sumCalls += arr[2];
 		}
-		System.out.println();
+		System.out.println("Nombre moyen d appels : " + (double) sumCalls / summary.size() + " calls \n");
 	}
 	static void line() {
 		System.out.print(" ");
